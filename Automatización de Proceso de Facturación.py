@@ -14,7 +14,7 @@ password_emisor = "hqrtxtudgoeabedl"
 
 # destinatarios
 correo_receptor = "adm@sms-sudamerica.com"
-correos_cc = "staffing_arg@sms-sudamerica.com", "fmenchacabaso@sms-sudamerica.com", "direccion@sms-sudamerica.com", "jortiz@sms-sudamerica.com"
+correos_cc = "staffing_arg@sms-sudamerica.com, fmenchacabaso@sms-sudamerica.com, direccion@sms-sudamerica.com, jortiz@sms-sudamerica.com"
 
 # =========================================
 
