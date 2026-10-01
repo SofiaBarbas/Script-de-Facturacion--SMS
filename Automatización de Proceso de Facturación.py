@@ -46,7 +46,23 @@ for row in range(2, ws_valores.max_row + 1):
         def obtener_valor(col):
             val = ws_valores.cell(row=row, column=col).value
             return str(val).strip() if val is not None and str(val).lower() != "nan" and str(val).strip() != "" else None
-        
+
+        def formatear_moneda(valor_raw, tipo_moneda):
+            if not valor_raw:
+                return None
+            try:
+                monto_num = float(valor_raw)
+                monto_formateado = f"{monto_num:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            except ValueError:
+                monto_formateado = valor_raw
+            
+            if tipo_moneda == "Dólares":
+                return f"USD {monto_formateado}"
+            elif tipo_moneda == "Pesos":
+                return f"$ {monto_formateado}"
+            else:
+                return monto_formateado
+
         razon_social = obtener_valor(6) or "S/D"
         mes = obtener_valor(7) or "S/D"
 
@@ -74,25 +90,9 @@ for row in range(2, ws_valores.max_row + 1):
         proyecto = obtener_valor(2) or "S/D"
         servicio_recurso = obtener_valor(4) or "S/D"
         
-        monto_raw = obtener_valor(9) # Columna I (Monto)
-        moneda = obtener_valor(8)    # Columna H (Moneda)
-
-        if monto_raw:
-            try:
-                monto_num = float(monto_raw)
-                monto_formateado = f"{monto_num:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-            except ValueError:
-                monto_formateado = monto_raw
-            
-            # agrega el símbolo según la columna H
-            if moneda == "Dólares":
-                monto_final = f"USD {monto_formateado}"
-            elif moneda == "Pesos":
-                monto_final = f"$ {monto_formateado}"
-            else:
-                monto_final = monto_formateado # por si alguna celda está vacía o dice otra cosa
-        else:
-            monto_final = "S/D"
+        moneda = obtener_valor(8)    
+        monto_raw = obtener_valor(9) 
+        monto_final = formatear_moneda(monto_raw, moneda) or "S/D"
 
 
         bloque_fila = f"  PROYECTO: {proyecto}\n  SERVICIO-RECURSO: {servicio_recurso}\n  AÑO/MES: {mes}\n  MONTO: {monto_final}\n"
@@ -101,12 +101,15 @@ for row in range(2, ws_valores.max_row + 1):
         # -- Datos opcionales --
         # se imprimen en el mail sólo si la celda tiene algo escrito)
 
+        adicionales_final = formatear_moneda(obtener_valor(14), moneda)
+        tarifa_final = formatear_moneda(obtener_valor(13), moneda)
+
         opcionales = {
             "OC": obtener_valor(10),                 # Col J
             "RECEPCIÓN": obtener_valor(11),          # Col K
             "REQUIRENTE": obtener_valor(12),         # Col L
-            "TARIFA-HORA": obtener_valor(13),        # Col M
-            "ADICIONALES-BONOS": obtener_valor(14),  # Col N
+            "TARIFA-HORA": tarifa_final,        # Col M
+            "ADICIONALES-BONOS": adicionales_final,  # Col N
             "CENTRO DE COSTO": obtener_valor(15),    # Col O
             "CUIT": obtener_valor(16),               # Col P
             "OBSERVACIONES": obtener_valor(19)       # Col S
