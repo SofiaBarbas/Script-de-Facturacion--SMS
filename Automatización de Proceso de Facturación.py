@@ -102,13 +102,12 @@ for row in range(2, ws_valores.max_row + 1):
         # se imprimen en el mail sólo si la celda tiene algo escrito)
 
         adicionales_final = formatear_moneda(obtener_valor(14), moneda)
-        tarifa_final = formatear_moneda(obtener_valor(13), moneda)
 
         opcionales = {
             "OC": obtener_valor(10),                 # Col J
             "RECEPCIÓN": obtener_valor(11),          # Col K
             "REQUIRENTE": obtener_valor(12),         # Col L
-            "TARIFA-HORA": tarifa_final,        # Col M
+            "TARIFA-HORA": obtener_valor(13),        # Col M
             "ADICIONALES-BONOS": adicionales_final,  # Col N
             "CENTRO DE COSTO": obtener_valor(15),    # Col O
             "CUIT": obtener_valor(16),               # Col P
