@@ -149,7 +149,7 @@ if mails_a_enviar:
             else:
                 mes_formateado = mes_raw # si el formato es distinto, lo deja como está
                 
-            msg['Subject'] = f"Facturación Servicios {mes_formateado} - {datos['razon_social_asunto']}"
+            msg['Subject'] = f"Facturación Servicios {mes_formateado} - {datos['razon_social_asunto']} - Envío Definitivo"
 
             
             # -- Mensaje del mail --
