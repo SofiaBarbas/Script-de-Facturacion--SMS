@@ -1,6 +1,8 @@
 import openpyxl
 import os
 import smtplib
+import imaplib
+import email
 from email.message import EmailMessage
 import mimetypes
 
@@ -17,7 +19,41 @@ correo_receptor = "adm@sms-sudamerica.com"
 correos_cc = "staffing_arg@sms-sudamerica.com, fmenchacabaso@sms-sudamerica.com, direccion@sms-sudamerica.com, jortiz@sms-sudamerica.com"
 
 # =========================================
+# busca el correo anterior para encadenarlo
 
+def obtener_message_id_previo(asunto_buscado):
+    try:
+        # Conectamos para leer el correo
+        mail = imaplib.IMAP4_SSL('imap.gmail.com')
+        mail.login(correo_emisor, password_emisor)
+        
+        # Intentamos abrir Enviados (español) o Sent Mail (inglés)
+        status, _ = mail.select('"[Gmail]/Enviados"')
+        if status != 'OK':
+            mail.select('"[Gmail]/Sent Mail"')
+        
+        # Buscamos con el motor nativo de Gmail (evita errores con tildes)
+        termino = f'subject:"{asunto_buscado}"'.encode('utf-8')
+        status, mensajes = mail.search(None, 'X-GM-RAW', termino)
+        
+        if status == 'OK' and mensajes[0]:
+            lista_ids = mensajes[0].split()
+            if lista_ids:
+                ultimo_id = lista_ids[-1] # Agarramos el más reciente
+                _, data = mail.fetch(ultimo_id, '(BODY[HEADER.FIELDS (MESSAGE-ID)])')
+                texto_header = data[0][1].decode('utf-8')
+                msg_parseado = email.message_from_string(texto_header)
+                mail.logout()
+                msg_id = msg_parseado.get('Message-ID')
+                return msg_id.strip() if msg_id else None
+                
+        mail.logout()
+        return None
+    except Exception as e:
+        print(f"Búsqueda IMAP falló (se enviará como correo nuevo): {e}")
+        return None
+
+# =========================================
 
 print("Abriendo Excel (esto puede demorar unos segundos)...")
 # abre el Excel dos veces (una para lectura y otra para escritura)
@@ -149,10 +185,19 @@ if mails_a_enviar:
             else:
                 mes_formateado = mes_raw # si el formato es distinto, lo deja como está
                 
-            msg['Subject'] = f"Facturación Servicios {mes_formateado} - {datos['razon_social_asunto']} - Envío Definitivo"
+            asunto_final = f"Facturación Servicios {mes_formateado} - {datos['razon_social_asunto']}"
+            msg['Subject'] = asunto_final
 
+            print(f"🔍 Buscando correos anteriores para: {cliente}...")
+            msg_id_previo = obtener_message_id_previo(asunto_final)
+            if msg_id_previo:
+                msg['In-Reply-To'] = msg_id_previo
+                msg['References'] = msg_id_previo
+                print(f"🔗 Hilo encontrado. Se agrupará en la cadena existente.")
+            else:
+                print(f"✉️ Hilo no encontrado. Se creará un correo nuevo.")
             
-            # -- Mensaje del mail --
+            # -- Cuerpo del mail --
 
             cuerpo_completo = f"Buenos días Equipo,\nLes pasamos lo que se puede facturar de {cliente} por el mes de {mes}:\n\n{datos['cuerpo_texto']}\n\n¡Saludos y Gracias!"
             msg.set_content(cuerpo_completo)
