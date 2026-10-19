@@ -23,24 +23,29 @@ correos_cc = "staffing_arg@sms-sudamerica.com, fmenchacabaso@sms-sudamerica.com,
 
 def obtener_message_id_previo(asunto_buscado):
     try:
-        # Conectamos para leer el correo
         mail = imaplib.IMAP4_SSL('imap.gmail.com')
         mail.login(correo_emisor, password_emisor)
         
-        # Intentamos abrir Enviados (español) o Sent Mail (inglés)
-        status, _ = mail.select('"[Gmail]/Enviados"')
-        if status != 'OK':
-            mail.select('"[Gmail]/Sent Mail"')
+        # busca en TODAS las carpetas posibles para que no falle nunca
+        carpetas = ['"[Gmail]/Todos los correos"', '"[Gmail]/Todos"', '"[Gmail]/All Mail"', '"[Gmail]/Enviados"', '"[Gmail]/Sent Mail"', 'INBOX']
+        for carpeta in carpetas:
+            status, _ = mail.select(carpeta, readonly=True)
+            if status == 'OK':
+                break
         
-        # Buscamos con el motor nativo de Gmail (evita errores con tildes)
-        termino = f'subject:"{asunto_buscado}"'.encode('utf-8')
+        # si no funciona, le sacamos la palabra con tilde para que la búsqueda en Gmail no se rompa
+        # en vez de buscar "Facturación Servicios...", busca "Servicios..."
+        asunto_seguro = asunto_buscado.replace("Facturación ", "")
+        termino = f'subject:"{asunto_seguro}"'.encode('utf-8')
+        
         status, mensajes = mail.search(None, 'X-GM-RAW', termino)
         
         if status == 'OK' and mensajes[0]:
             lista_ids = mensajes[0].split()
             if lista_ids:
-                ultimo_id = lista_ids[-1] # Agarramos el más reciente
-                _, data = mail.fetch(ultimo_id, '(BODY[HEADER.FIELDS (MESSAGE-ID)])')
+                # agarra el PRIMER mensaje de la historia de esa cadena (la raíz)
+                primer_id = lista_ids[0] 
+                _, data = mail.fetch(primer_id, '(BODY[HEADER.FIELDS (MESSAGE-ID)])')
                 texto_header = data[0][1].decode('utf-8')
                 msg_parseado = email.message_from_string(texto_header)
                 mail.logout()
@@ -52,6 +57,7 @@ def obtener_message_id_previo(asunto_buscado):
     except Exception as e:
         print(f"Búsqueda IMAP falló (se enviará como correo nuevo): {e}")
         return None
+ # si no funciona con esto no se xd
 
 # =========================================
 
