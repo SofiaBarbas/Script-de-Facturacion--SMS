@@ -185,7 +185,7 @@ if mails_a_enviar:
             else:
                 mes_formateado = mes_raw # si el formato es distinto, lo deja como está
                 
-            asunto_final = f"Facturación Servicios {mes_formateado} - {datos['razon_social_asunto']}"
+            asunto_final = f"Facturación Servicios {mes_formateado} - {datos['razon_social_asunto']} - Envío Definitivo"
             msg['Subject'] = asunto_final
 
             print(f"🔍 Buscando correos anteriores para: {cliente}...")
